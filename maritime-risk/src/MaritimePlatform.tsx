@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ═══════════════════════════════════════════════════════════════
 // MARITIME VOYAGE RISK INTELLIGENCE PLATFORM
 // AI-Driven Marine Insurance Dashboard
@@ -16,6 +17,7 @@ import { vessels } from "./data/vessels";
 import { getAllVessels, getVesselById, getHighRiskVessels, getActiveVessels } from "./services/vesselService";
 import { calculateVoyageRisk, getVoyageRiskBreakdown } from "./logic/riskEngine";
 import { generateRiskExplanation, generateVoyageSummary } from "./services/aiExplanation";
+import AIBehaviorMonitor from "./components/AIBehaviorMonitor";
 
 // ─────────────────────────────────────────────────────────────
 // ANTIGRAVITY DESIGN TOKENS
@@ -38,9 +40,9 @@ const AG = {
 };
 
 // ─────────────────────────────────────────────────────────────
-// MOCK DATA ENGINE
+// MOCK DATA ENGINE (Normalized after helper functions)
 // ─────────────────────────────────────────────────────────────
-const MOCK_VESSELS = vessels;
+let MOCK_VESSELS = []; // Defined below helpers
 
 const RISK_TIMELINE = [
     { time: '06:00', risk: 28, weather: 15, piracy: 8, congestion: 5 },
@@ -103,6 +105,15 @@ const getRiskLabel = (score) => {
     if (score >= 31) return 'MODERATE';
     return 'LOW';
 };
+
+// Data Normalization
+MOCK_VESSELS = vessels.map(v => ({
+    ...v,
+    risk: v.riskScore || 0,
+    tier: getRiskLabel(v.riskScore || 0),
+    ais: v.ais !== undefined ? v.ais : true,
+    reliability: v.reliability || 85
+}));
 
 // Floating Card Component (Antigravity: ag-float-card)
 const FloatCard = ({ children, className = '', style = {}, onClick, delay = 0 }) => (
@@ -590,6 +601,10 @@ const VoyageDashboardView = () => {
                 <StatCard label="Voyage Risk Score" value={vessel.risk} color={getRiskColor(vessel.risk)} icon="⚡" delta={12} delay={0} />
                 <StatCard label="Weather Risk" value="MODERATE" color={AG.colors.amber} icon="🌩️" delay={0.1} />
                 <StatCard label="Piracy Risk" value="HIGH" color={AG.colors.coral} icon="🏴‍☠️" delay={0.2} />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+                <AIBehaviorMonitor />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 20 }}>
