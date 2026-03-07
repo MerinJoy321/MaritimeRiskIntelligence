@@ -16,6 +16,7 @@ import { vessels } from "./data/vessels";
 import { getAllVessels, getVesselById, getHighRiskVessels, getActiveVessels } from "./services/vesselService";
 import { calculateVoyageRisk, getVoyageRiskBreakdown } from "./logic/riskEngine";
 import { generateRiskExplanation, generateVoyageSummary } from "./services/aiExplanation";
+import MaritimeRiskMap from "./components/MaritimeRiskMap";
 
 // ─────────────────────────────────────────────────────────────
 // ANTIGRAVITY DESIGN TOKENS
@@ -335,6 +336,10 @@ const GlobalMapView = () => {
                 <StatCard label="High Risk Zones" value="7" color={AG.colors.coral} icon="⚠️" delay={0.1} />
                 <StatCard label="Active Piracy Alerts" value="3" color={AG.colors.amber} icon="🏴‍☠️" delay={0.2} />
                 <StatCard label="Storm Systems" value="5" color={AG.colors.biolume} icon="🌀" delay={0.3} />
+            </div>
+
+            <div style={{ marginBottom: "24px" }}>
+                <MaritimeRiskMap />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
@@ -1029,6 +1034,7 @@ export default function MaritimePlatform() {
     return (
         <div style={{
             display: 'flex', minHeight: '100vh',
+            width: '100%',
             background: AG.colors.void,
             fontFamily: '"DM Sans", "Segoe UI", sans-serif',
             color: AG.colors.text.primary,
