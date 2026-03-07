@@ -1,0 +1,10 @@
+{
+  "name": "maritime-risk-intelligence-root",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm run dev --prefix maritime-risk",
+    "build": "npm run build --prefix maritime-risk",
+    "lint": "npm run lint --prefix maritime-risk",
+    "preview": "npm run preview --prefix maritime-risk"
+  }
+}
