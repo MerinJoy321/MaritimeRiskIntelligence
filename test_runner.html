@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vessel Behaviour Detection Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .vessel-info {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        pre {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #334155;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .risk-high { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; }
+        .risk-medium { background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; }
+        .risk-low { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; }
+        .risk-score {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ef4444;
+        }
+        .anomaly-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .anomaly-item {
+            color: #fca5a5;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .anomaly-item::before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vessel Behaviour Monitor</h1>
+        
+        <div class="vessel-info">
+            <h3>Testing Vessel: MV Ocean Star</h3>
+            <pre id="vessel-data"></pre>
+        </div>
+
+        <div id="result-container" class="result">
+            <h3>Detection Results</h3>
+            <div id="detection-output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Re-implementing logic here for terminal/browser demo context
+        function detectBehaviour(vessel) {
+            const anomalies = [];
+            let riskScore = 0;
+
+            if (vessel.speed < vessel.expectedSpeed * 0.5) {
+                anomalies.push("Slow speed anomaly detected");
+                riskScore += 30;
+            }
+            if (vessel.speed > vessel.expectedSpeed * 1.5) {
+                anomalies.push("High speed anomaly detected");
+                riskScore += 20;
+            }
+            if (vessel.aisGap > 30) {
+                anomalies.push("AIS signal lost");
+                riskScore += 40;
+            }
+            if (vessel.routeDeviation > 15) {
+                anomalies.push("Route deviation detected");
+                riskScore += 25;
+            }
+
+            if (anomalies.length === 0) return "Normal vessel behaviour";
+            return { anomalies, riskScore };
+        }
+
+        const demoVessel = {
+            name: "MV Ocean Star",
+            speed: 6,
+            expectedSpeed: 15,
+            aisGap: 45,
+            routeDeviation: 18
+        };
+
+        // Execution
+        document.getElementById('vessel-data').textContent = JSON.stringify(demoVessel, null, 2);
+        
+        const result = detectBehaviour(demoVessel);
+        const outputDiv = document.getElementById('detection-output');
+        const container = document.getElementById('result-container');
+
+        if (typeof result === 'string') {
+            container.className = 'result risk-low';
+            outputDiv.innerHTML = `<p>${result}</p><p class="risk-score">Risk Score: 0</p>`;
+        } else {
+            container.className = result.riskScore > 50 ? 'result risk-high' : 'result risk-medium';
+            let list = '<ul class="anomaly-list">';
+            result.anomalies.forEach(a => {
+                list += `<li class="anomaly-item">${a}</li>`;
+            });
+            list += '</ul>';
+            outputDiv.innerHTML = `${list}<p class="risk-score">Risk Score: ${result.riskScore}</p>`;
+        }
+    </script>
+</body>
+</html>
