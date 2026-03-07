@@ -1,9 +1,7 @@
-import MaritimePlatform from './MaritimePlatform.jsx'
+import MaritimePlatform from './MaritimePlatform';
 
 function App() {
-  return (
-    <MaritimePlatform />
-  )
+  return <MaritimePlatform />;
 }
 
 export default App
