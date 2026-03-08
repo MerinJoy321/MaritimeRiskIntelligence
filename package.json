@@ -6,5 +6,10 @@
     "build": "npm run build --prefix maritime-risk",
     "lint": "npm run lint --prefix maritime-risk",
     "preview": "npm run preview --prefix maritime-risk"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0",
+    "react-simple-maps": "^3.0.0"
   }
 }

@@ -6,7 +6,7 @@
 // Stack: React + Framer Motion + Recharts + Claude AI API
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense, lazy } from "react";
 import { motion, AnimatePresence, useSpring, useTransform } from "framer-motion";
 import {
     AreaChart, Area, LineChart, Line, BarChart, Bar,
@@ -19,7 +19,7 @@ import { calculateVoyageRisk, getVoyageRiskBreakdown } from "./logic/riskEngine"
 import { generateRiskExplanation, generateVoyageSummary } from "./services/aiExplanation";
 import AIBehaviorMonitor from "./components/AIBehaviorMonitor";
 import MaritimeRiskMap from "./components/MaritimeRiskMap";
-
+const VesselMap = lazy(() => import('./components/VesselMap'));
 // ─────────────────────────────────────────────────────────────
 // ANTIGRAVITY DESIGN TOKENS
 // ─────────────────────────────────────────────────────────────
@@ -350,7 +350,13 @@ const GlobalMapView = () => {
             </div>
 
             <div style={{ marginBottom: "24px" }}>
-                <MaritimeRiskMap />
+                <Suspense fallback={
+                    <div style={{ height: '500px', background: AG.colors.abyss, border: `1px solid ${AG.colors.current}`, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: AG.colors.biolume }}>
+                        Loading Live Map...
+                    </div>
+                }>
+                    <VesselMap />
+                </Suspense>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
@@ -640,28 +646,25 @@ const VoyageDashboardView = () => {
                     <div style={{ fontSize: 12, color: AG.colors.text.muted, letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace' }}>CURRENT RISK SCORE</div>
                     <ScoreRing score={vessel.risk} size={140} strokeWidth={10} />
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {(() => {
-                            const breakdown = getVoyageRiskBreakdown();
-                            return [
-                                { label: 'Weather', value: breakdown.weatherRisk, color: AG.colors.biolume, weight: '40%' },
-                                { label: 'Piracy', value: breakdown.piracyRisk, color: AG.colors.coral, weight: '30%' },
-                                { label: 'Congestion', value: breakdown.congestionRisk, color: AG.colors.amber, weight: '20%' },
-                                { label: 'Behaviour', value: breakdown.behaviourRisk, color: AG.colors.phosphor, weight: '10%' },
-                            ].map(item => (
-                                <div key={item.label}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                                        <span style={{ fontSize: 11, color: AG.colors.text.muted }}>{item.label} <span style={{ color: AG.colors.text.muted, fontSize: 10 }}>({item.weight})</span></span>
-                                        <span style={{ fontSize: 11, fontWeight: 700, color: item.color, fontFamily: 'JetBrains Mono, monospace' }}>{item.value}</span>
-                                    </div>
-                                    <div style={{ height: 3, background: AG.colors.ghost, borderRadius: 99, overflow: 'hidden' }}>
-                                        <motion.div initial={{ width: 0 }} animate={{ width: `${item.value}%` }}
-                                            transition={{ duration: 1, delay: 0.6, ease: AG.easing.swell }}
-                                            style={{ height: '100%', background: item.color, boxShadow: `0 0 8px ${item.color}`, borderRadius: 99 }}
-                                        />
-                                    </div>
+                        {[
+                            { label: 'Weather', value: 45, color: AG.colors.biolume, weight: '40%' },
+                            { label: 'Piracy', value: 72, color: AG.colors.coral, weight: '30%' },
+                            { label: 'Congestion', value: 30, color: AG.colors.amber, weight: '20%' },
+                            { label: 'Behaviour', value: 10, color: AG.colors.phosphor, weight: '10%' },
+                        ].map(item => (
+                            <div key={item.label}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                                    <span style={{ fontSize: 11, color: AG.colors.text.muted }}>{item.label} <span style={{ color: AG.colors.text.muted, fontSize: 10 }}>({item.weight})</span></span>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: item.color, fontFamily: 'JetBrains Mono, monospace' }}>{item.value}</span>
                                 </div>
-                            ));
-                        })()}
+                                <div style={{ height: 3, background: AG.colors.ghost, borderRadius: 99, overflow: 'hidden' }}>
+                                    <motion.div initial={{ width: 0 }} animate={{ width: `${item.value}%` }}
+                                        transition={{ duration: 1, delay: 0.6, ease: AG.easing.swell }}
+                                        style={{ height: '100%', background: item.color, boxShadow: `0 0 8px ${item.color}`, borderRadius: 99 }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </FloatCard>
             </div>
