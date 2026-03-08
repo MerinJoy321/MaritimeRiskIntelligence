@@ -349,111 +349,18 @@ const GlobalMapView = () => {
                 <StatCard label="Storm Systems" value="5" color={AG.colors.biolume} icon="🌀" delay={0.3} />
             </div>
 
-            <div style={{ marginBottom: "24px" }}>
+
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
+                {/* Map */}
+                {/* Map */}
                 <Suspense fallback={
-                    <div style={{ height: '500px', background: AG.colors.abyss, border: `1px solid ${AG.colors.current}`, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: AG.colors.biolume }}>
+                    <div style={{ minHeight: 420, height: '100%', background: AG.colors.abyss, border: `1px solid ${AG.colors.current}`, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: AG.colors.biolume }}>
                         Loading Live Map...
                     </div>
                 }>
                     <VesselMap />
                 </Suspense>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
-                {/* Map */}
-                <FloatCard delay={0.4} style={{ padding: 0, overflow: 'hidden', minHeight: 420, position: 'relative' }}>
-                    {/* Ocean background */}
-                    <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 60%, ${AG.colors.deep} 0%, ${AG.colors.void} 100%)` }} />
-
-                    {/* Grid lines (lat/lng simulation) */}
-                    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.15 }}>
-                        {[0, 20, 40, 60, 80, 100].map(p => (
-                            <g key={p}>
-                                <line x1={`${p}%`} y1="0" x2={`${p}%`} y2="100%" stroke={AG.colors.biolume} strokeWidth={0.5} />
-                                <line x1="0" y1={`${p}%`} x2="100%" y2={`${p}%`} stroke={AG.colors.biolume} strokeWidth={0.5} />
-                            </g>
-                        ))}
-                    </svg>
-
-                    {/* Risk heatmap blobs */}
-                    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-                        <defs>
-                            {mapRegions.map((r, i) => (
-                                <radialGradient key={i} id={`heat${i}`} cx="50%" cy="50%" r="50%">
-                                    <stop offset="0%" stopColor={getRiskColor(r.risk)} stopOpacity={0.35} />
-                                    <stop offset="100%" stopColor={getRiskColor(r.risk)} stopOpacity={0} />
-                                </radialGradient>
-                            ))}
-                        </defs>
-                        {mapRegions.map((r, i) => (
-                            <ellipse key={i} cx={`${r.x}%`} cy={`${r.y}%`} rx="8%" ry="7%"
-                                fill={`url(#heat${i})`} />
-                        ))}
-                    </svg>
-
-                    {/* Vessel markers */}
-                    {MOCK_VESSELS.map((v, i) => {
-                        // Normalize lat/lng to SVG percentage
-                        const svgX = ((v.lng + 180) / 360) * 100;
-                        const svgY = ((90 - v.lat) / 180) * 100;
-                        const color = getRiskColor(v.risk);
-                        return (
-                            <motion.div key={v.id}
-                                initial={{ scale: 0 }} animate={{ scale: 1 }}
-                                transition={{ delay: 0.5 + i * 0.1, type: 'spring' }}
-                                onClick={() => setSelected(v)}
-                                style={{
-                                    position: 'absolute', left: `${svgX}%`, top: `${svgY}%`,
-                                    transform: 'translate(-50%,-50%)', cursor: 'pointer', zIndex: 10
-                                }}
-                            >
-                                {/* Ripple */}
-                                {v.risk >= 70 && (
-                                    <motion.div
-                                        animate={{ scale: [1, 2.5], opacity: [0.6, 0] }}
-                                        transition={{ duration: 1.8, repeat: Infinity }}
-                                        style={{ position: 'absolute', inset: -8, borderRadius: 99, border: `2px solid ${color}` }}
-                                    />
-                                )}
-                                <div style={{
-                                    width: 10, height: 10, borderRadius: 99, background: color,
-                                    boxShadow: `0 0 ${v.risk > 70 ? 16 : 8}px ${color}`,
-                                    border: `1.5px solid ${color}88`
-                                }} />
-                                {selected?.id === v.id && (
-                                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: -12 }}
-                                        style={{
-                                            position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
-                                            background: AG.colors.deep, border: `1px solid ${color}`, borderRadius: 8,
-                                            padding: '8px 12px', whiteSpace: 'nowrap', fontSize: 11,
-                                            fontFamily: 'JetBrains Mono, monospace', color: AG.colors.text.primary,
-                                            boxShadow: `0 8px 24px rgba(0,0,0,0.5)`, zIndex: 20
-                                        }}
-                                    >
-                                        <div style={{ fontWeight: 700, color, marginBottom: 2 }}>{v.name}</div>
-                                        <div style={{ color: AG.colors.text.muted }}>{v.route}</div>
-                                        <div>Risk: <b style={{ color }}>{v.risk}</b> | {v.status}</div>
-                                    </motion.div>
-                                )}
-                            </motion.div>
-                        );
-                    })}
-
-                    {/* Map label */}
-                    <div style={{ position: 'absolute', bottom: 16, left: 20, fontSize: 11, color: AG.colors.text.muted, fontFamily: 'JetBrains Mono, monospace' }}>
-                        AIS DATA • UPDATED 2 MIN AGO
-                    </div>
-
-                    {/* Legend */}
-                    <div style={{ position: 'absolute', bottom: 16, right: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
-                        {[{ c: AG.colors.phosphor, l: 'LOW' }, { c: AG.colors.amber, l: 'MOD' }, { c: '#ff8c00', l: 'HIGH' }, { c: AG.colors.coral, l: 'CRIT' }].map(x => (
-                            <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <div style={{ width: 8, height: 8, borderRadius: 99, background: x.c, boxShadow: `0 0 6px ${x.c}` }} />
-                                <span style={{ fontSize: 10, color: AG.colors.text.muted, fontFamily: 'JetBrains Mono, monospace' }}>{x.l}</span>
-                            </div>
-                        ))}
-                    </div>
-                </FloatCard>
 
                 {/* Risk Zones Panel */}
                 <FloatCard delay={0.5} style={{ padding: 20 }}>

@@ -6,6 +6,7 @@ import random
 # Import our custom modules
 from data_loader import load_vessel_data
 from risk_model import calculate_risk
+from ai_engine import get_risk_explanation
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -72,6 +73,35 @@ def post_calculate_risk(request: VesselRiskRequest):
         "mmsi": request.mmsi,
         "risk_score": risk_score,
         "recommendation": "Monitor" if risk_score > 50 else "Safe"
+    }
+
+class AIRiskRequest(BaseModel):
+    name: str
+    weather: float
+    piracy: float
+    congestion: float
+    behaviour: float
+
+@app.post("/api/risk")
+def calculate_ai_risk(request: AIRiskRequest):
+    # Base risk driven by telemetry inputs from the frontend simulation
+    score = (request.weather * 40) + (request.piracy * 30) + (request.congestion * 20) + (request.behaviour * 10)
+    
+    explanation = get_risk_explanation(
+        vessel_name=request.name,
+        score=score,
+        metrics={
+            "weather": request.weather,
+            "piracy": request.piracy,
+            "congestion": request.congestion,
+            "behaviour": request.behaviour
+        }
+    )
+    
+    return {
+        "voyage_risk_score": round(score, 1),
+        "risk_level": "CRITICAL" if score >= 80 else "HIGH" if score >= 60 else "MODERATE" if score >= 30 else "LOW",
+        "ai_explanation": explanation
     }
 
 if __name__ == "__main__":
