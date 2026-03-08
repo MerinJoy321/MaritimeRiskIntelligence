@@ -1,0 +1,4 @@
+vessel_id,weather_risk,piracy_risk,congestion_risk,behaviour_risk
+MV Ocean Star,0.4,0.6,0.3,0.2
+MT Blue Wave,0.2,0.8,0.5,0.4
+MV Gulf Trader,0.1,0.2,0.1,0.1
