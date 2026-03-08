@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   ComposableMap,
   Geographies,
@@ -6,11 +6,17 @@ import {
   Marker,
   Line,
 } from "react-simple-maps";
-import { vessels, riskZones, selectedRoute } from "../data/maritimeMapData";
+import { riskZones, selectedRoute } from "../data/maritimeMapData";
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 const getColor = (level) => {
+  // Support numeric scores from the real backend dataset
+  if (typeof level === "number") {
+    if (level > 60) return "#ff4757";
+    if (level > 30) return "#ffaa00";
+    return "#00ff9d";
+  }
   switch (level.toLowerCase()) {
     case "high":
       return "#ff4757"; // Coral red
@@ -24,6 +30,17 @@ const getColor = (level) => {
 };
 
 const MaritimeRiskMap = () => {
+  const [vessels, setVessels] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/vessels")
+      .then(res => res.json())
+      .then(data => {
+          setVessels(data);
+      })
+      .catch(err => console.error("Error fetching vessels:", err));
+  }, []);
+
   return (
     <div
       style={{
@@ -97,12 +114,12 @@ const MaritimeRiskMap = () => {
           ))}
 
           {/* Render Vessels */}
-          {vessels.map(({ id, name, lat, lon, risk }) => (
-            <Marker key={id} coordinates={[lon, lat]}>
+          {vessels.map(({ mmsi, lat, lon, risk_score }) => (
+            <Marker key={mmsi} coordinates={[lon, lat]}>
               <g transform="translate(-6, -6)">
                 <path
                   d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                  fill={getColor(risk)}
+                  fill={getColor(risk_score)}
                   transform="scale(0.5)"
                 />
               </g>
@@ -115,7 +132,7 @@ const MaritimeRiskMap = () => {
                   fill: "#7fb3c8",
                 }}
               >
-                {name}
+                MMSI: {mmsi}
               </text>
             </Marker>
           ))}

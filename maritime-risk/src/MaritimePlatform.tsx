@@ -19,7 +19,7 @@ import { calculateVoyageRisk, getVoyageRiskBreakdown } from "./logic/riskEngine"
 import { generateRiskExplanation, generateVoyageSummary } from "./services/aiExplanation";
 import AIBehaviorMonitor from "./components/AIBehaviorMonitor";
 import MaritimeRiskMap from "./components/MaritimeRiskMap";
-const VesselMap = lazy(() => import('./components/VesselMap'));
+
 // ─────────────────────────────────────────────────────────────
 // ANTIGRAVITY DESIGN TOKENS
 // ─────────────────────────────────────────────────────────────
@@ -354,13 +354,7 @@ const GlobalMapView = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
                 {/* Map */}
                 {/* Map */}
-                <Suspense fallback={
-                    <div style={{ minHeight: 420, height: '100%', background: AG.colors.abyss, border: `1px solid ${AG.colors.current}`, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: AG.colors.biolume }}>
-                        Loading Live Map...
-                    </div>
-                }>
-                    <VesselMap />
-                </Suspense>
+                <MaritimeRiskMap />
 
                 {/* Risk Zones Panel */}
                 <FloatCard delay={0.5} style={{ padding: 20 }}>
