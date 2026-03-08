@@ -12,6 +12,11 @@ import {
     RadarChart, Radar, PolarGrid, PolarAngleAxis,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
+import { vessels } from "./data/vessels";
+import { getAllVessels, getVesselById, getHighRiskVessels, getActiveVessels } from "./services/vesselService";
+import { calculateVoyageRisk, getVoyageRiskBreakdown } from "./logic/riskEngine";
+import { generateRiskExplanation, generateVoyageSummary } from "./services/aiExplanation";
+import MaritimeRiskMap from "./components/MaritimeRiskMap";
 
 // ─────────────────────────────────────────────────────────────
 // ANTIGRAVITY DESIGN TOKENS
@@ -36,13 +41,7 @@ const AG = {
 // ─────────────────────────────────────────────────────────────
 // MOCK DATA ENGINE
 // ─────────────────────────────────────────────────────────────
-const MOCK_VESSELS = [
-    { id: 'V001', name: 'MV Ocean Star', flag: '🇵🇦', type: 'Bulk Carrier', route: 'Dubai → Suez', risk: 72, lat: 25.2, lng: 56.3, status: 'En Route', reliability: 82, tier: 'HIGH', ais: true },
-    { id: 'V002', name: 'MT Nordic Pearl', flag: '🇳🇴', type: 'Oil Tanker', route: 'Rotterdam → New York', risk: 38, lat: 51.9, lng: 4.5, status: 'En Route', reliability: 91, tier: 'MODERATE', ais: true },
-    { id: 'V003', name: 'MV Fortune Bay', flag: '🇱🇷', type: 'Container Ship', route: 'Shanghai → LA', risk: 21, lat: 31.2, lng: 121.5, status: 'Port', reliability: 67, tier: 'LOW', ais: true },
-    { id: 'V004', name: 'MV Aden Horizon', flag: '🇲🇭', type: 'General Cargo', route: 'Djibouti → Mumbai', risk: 89, lat: 11.8, lng: 43.1, status: 'Delayed', reliability: 55, tier: 'CRITICAL', ais: false },
-    { id: 'V005', name: 'MV Cape Pioneer', flag: '🇵🇦', type: 'Bulk Carrier', route: 'Cape Town → Hamburg', risk: 44, lat: -33.9, lng: 18.4, status: 'En Route', reliability: 78, tier: 'MODERATE', ais: true },
-];
+const MOCK_VESSELS = vessels;
 
 const RISK_TIMELINE = [
     { time: '06:00', risk: 28, weather: 15, piracy: 8, congestion: 5 },
@@ -339,6 +338,10 @@ const GlobalMapView = () => {
                 <StatCard label="Storm Systems" value="5" color={AG.colors.biolume} icon="🌀" delay={0.3} />
             </div>
 
+            <div style={{ marginBottom: "24px" }}>
+                <MaritimeRiskMap />
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
                 {/* Map */}
                 <FloatCard delay={0.4} style={{ padding: 0, overflow: 'hidden', minHeight: 420, position: 'relative' }}>
@@ -620,27 +623,30 @@ const VoyageDashboardView = () => {
                 {/* Current Risk Breakdown */}
                 <FloatCard delay={0.4} style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
                     <div style={{ fontSize: 12, color: AG.colors.text.muted, letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace' }}>CURRENT RISK SCORE</div>
-                    <ScoreRing score={vessel.risk} size={140} strokeWidth={10} />
+                    <ScoreRing score={vessel.riskScore || vessel.risk} size={140} strokeWidth={10} />
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {[
-                            { label: 'Weather', value: 42, color: AG.colors.biolume, weight: '40%' },
-                            { label: 'Piracy', value: 22, color: AG.colors.coral, weight: '30%' },
-                            { label: 'Congestion', value: 8, color: AG.colors.amber, weight: '20%' },
-                            { label: 'Behaviour', value: 0, color: AG.colors.phosphor, weight: '10%' },
-                        ].map(item => (
-                            <div key={item.label}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                                    <span style={{ fontSize: 11, color: AG.colors.text.muted }}>{item.label} <span style={{ color: AG.colors.text.muted, fontSize: 10 }}>({item.weight})</span></span>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: item.color, fontFamily: 'JetBrains Mono, monospace' }}>{item.value}</span>
+                        {(() => {
+                            const breakdown = getVoyageRiskBreakdown();
+                            return [
+                                { label: 'Weather', value: breakdown.weatherRisk, color: AG.colors.biolume, weight: '40%' },
+                                { label: 'Piracy', value: breakdown.piracyRisk, color: AG.colors.coral, weight: '30%' },
+                                { label: 'Congestion', value: breakdown.congestionRisk, color: AG.colors.amber, weight: '20%' },
+                                { label: 'Behaviour', value: breakdown.behaviourRisk, color: AG.colors.phosphor, weight: '10%' },
+                            ].map(item => (
+                                <div key={item.label}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                                        <span style={{ fontSize: 11, color: AG.colors.text.muted }}>{item.label} <span style={{ color: AG.colors.text.muted, fontSize: 10 }}>({item.weight})</span></span>
+                                        <span style={{ fontSize: 11, fontWeight: 700, color: item.color, fontFamily: 'JetBrains Mono, monospace' }}>{item.value}</span>
+                                    </div>
+                                    <div style={{ height: 3, background: AG.colors.ghost, borderRadius: 99, overflow: 'hidden' }}>
+                                        <motion.div initial={{ width: 0 }} animate={{ width: `${item.value}%` }}
+                                            transition={{ duration: 1, delay: 0.6, ease: AG.easing.swell }}
+                                            style={{ height: '100%', background: item.color, boxShadow: `0 0 8px ${item.color}`, borderRadius: 99 }}
+                                        />
+                                    </div>
                                 </div>
-                                <div style={{ height: 3, background: AG.colors.ghost, borderRadius: 99, overflow: 'hidden' }}>
-                                    <motion.div initial={{ width: 0 }} animate={{ width: `${item.value}%` }}
-                                        transition={{ duration: 1, delay: 0.6, ease: AG.easing.swell }}
-                                        style={{ height: '100%', background: item.color, boxShadow: `0 0 8px ${item.color}`, borderRadius: 99 }}
-                                    />
-                                </div>
-                            </div>
-                        ))}
+                            ));
+                        })()}
                     </div>
                 </FloatCard>
             </div>
@@ -1028,6 +1034,7 @@ export default function MaritimePlatform() {
     return (
         <div style={{
             display: 'flex', minHeight: '100vh',
+            width: '100%',
             background: AG.colors.void,
             fontFamily: '"DM Sans", "Segoe UI", sans-serif',
             color: AG.colors.text.primary,
