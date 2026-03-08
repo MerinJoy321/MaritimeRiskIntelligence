@@ -623,7 +623,7 @@ const VoyageDashboardView = () => {
                 {/* Current Risk Breakdown */}
                 <FloatCard delay={0.4} style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
                     <div style={{ fontSize: 12, color: AG.colors.text.muted, letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace' }}>CURRENT RISK SCORE</div>
-                    <ScoreRing score={vessel.riskScore || vessel.risk} size={140} strokeWidth={10} />
+                    <ScoreRing score={vessel.risk} size={140} strokeWidth={10} />
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {(() => {
                             const breakdown = getVoyageRiskBreakdown();

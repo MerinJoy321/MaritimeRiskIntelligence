@@ -15,9 +15,9 @@ export function getVesselById(id) {
   return vessels.find((v) => v.id === id);
 }
 
-/** Returns vessels with riskScore >= 70. */
+/** Returns vessels with risk >= 70. */
 export function getHighRiskVessels() {
-  return vessels.filter((v) => v.riskScore >= 70);
+  return vessels.filter((v) => v.risk >= 70);
 }
 
 /** Returns vessels currently en route. */
