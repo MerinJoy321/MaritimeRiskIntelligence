@@ -7,13 +7,13 @@
 /**
  * Generates an AI-style risk explanation based on voyage risk factors.
  *
- * @param {number}  riskScore   - Overall voyage risk score (0–100)
+ * @param {number}  risk   - Overall voyage risk score (0–100)
  * @param {string}  piracyRisk  - Piracy threat level: "HIGH" | "MODERATE" | "LOW"
  * @param {string}  weatherRisk - Weather threat level: "SEVERE" | "MODERATE" | "LOW"
  * @returns {string} Natural-language risk explanation
  */
-export function generateRiskExplanation(riskScore, piracyRisk, weatherRisk) {
-  if (riskScore >= 75) {
+export function generateRiskExplanation(risk, piracyRisk, weatherRisk) {
+  if (risk >= 75) {
     return (
       `⚠️ HIGH VOYAGE RISK — This voyage presents elevated risk due to ` +
       `active piracy hotspots (threat level: ${piracyRisk}) combined with ` +
@@ -24,7 +24,7 @@ export function generateRiskExplanation(riskScore, piracyRisk, weatherRisk) {
     );
   }
 
-  if (riskScore >= 40) {
+  if (risk >= 40) {
     return (
       `⚡ MODERATE VOYAGE RISK — This voyage carries moderate risk. ` +
       `Environmental threats are present (piracy: ${piracyRisk}, ` +
@@ -50,22 +50,22 @@ export function generateRiskExplanation(riskScore, piracyRisk, weatherRisk) {
  */
 export function generateVoyageSummary(vessel) {
   const level =
-    vessel.riskScore >= 75
+    vessel.risk >= 75
       ? "high"
-      : vessel.riskScore >= 40
+      : vessel.risk >= 40
         ? "moderate"
         : "low";
 
   const recommendation =
-    vessel.riskScore >= 75
+    vessel.risk >= 75
       ? "Enhanced monitoring and additional risk loading are strongly recommended."
-      : vessel.riskScore >= 40
+      : vessel.risk >= 40
         ? "Continued monitoring is advised; standard terms may apply with surcharge."
         : "Standard underwriting terms are acceptable with no additional action required.";
 
   return (
     `${vessel.name} (${vessel.type}, flag: ${vessel.flag}) currently ` +
-    `shows a ${level} voyage risk score of ${vessel.riskScore} while ` +
+    `shows a ${level} voyage risk score of ${vessel.risk} while ` +
     `transiting the ${vessel.route} route. Vessel reliability is rated ` +
     `at ${vessel.reliability}%. ${recommendation}`
   );
