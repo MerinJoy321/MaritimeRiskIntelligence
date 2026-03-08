@@ -5,9 +5,13 @@ __pycache__/
 .env
 .venv/
 venv/
+.venv/
+venv/
 
 # Large data files - do not commit
 backend/data/*.csv
+# Allow the committed sample so teammates have real data
+!backend/data/AIS_sample.csv
 backend/data/*.parquet
 
 # Node
