@@ -1076,7 +1076,7 @@ export default function MaritimePlatform() {
                     <div>
                         <motion.div key={activeView} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
                             style={{ fontSize: 13, color: AG.colors.text.muted, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em' }}>
-                            MARITIME RISK INTELLIGENCE PLATFORM
+                            marineInsight
                         </motion.div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
