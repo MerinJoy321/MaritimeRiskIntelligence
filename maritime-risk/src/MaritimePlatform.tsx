@@ -912,32 +912,30 @@ Keep the report concise but comprehensive (about 400 words).`;
         setLoading(true);
         setReport('');
         try {
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            // Mapping frontend vessel concept to backend expected format
+            const mockWeather = vessel.risk > 60 ? 0.8 : 0.3;
+            const mockPiracy = vessel.risk > 70 ? 0.9 : 0.2;
+            
+            const response = await fetch('http://localhost:8000/api/risk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
-                    max_tokens: 1000,
-                    system: SYSTEM_PROMPT,
-                    messages: [{
-                        role: 'user',
-                        content: `Generate a voyage risk assessment for:
-Vessel: ${vessel.name} (${vessel.flag})
-Type: ${vessel.type}
-Route: ${vessel.route}
-Current Risk Score: ${vessel.risk}/100
-Reliability Score: ${vessel.reliability}/100
-Insurance Tier: ${vessel.tier}
-AIS Status: ${vessel.ais ? 'Active' : 'DARK - Signal Lost'}
-Current Status: ${vessel.status}
-Weather Risk: MODERATE (Storm systems forecast)
-Piracy Risk: HIGH (3 recent incidents Gulf of Aden)
-Port Congestion: MODERATE (12h delay Suez)`
-                    }]
+                    name: vessel.name,
+                    weather: mockWeather,
+                    piracy: mockPiracy,
+                    congestion: 0.4,
+                    behaviour: 0.1
                 })
             });
             const data = await response.json();
-            const text = data.content?.map(c => c.text || '').join('') || 'Unable to generate report.';
+            
+            // Format the backend response into a report
+            let text = `=================================\nVOYAGE RISK ASSESSMENT REPORT\nNAVIGATOR Intelligence System\n=================================\n\n`;
+            text += `VESSEL: ${vessel.name} (${vessel.flag})\n`;
+            text += `CALCULATED RISK SCORE: ${data.voyage_risk_score} / 100\n`;
+            text += `RISK LEVEL: ${data.risk_level}\n\n`;
+            text += `--- AI ANALYST EXPLANATION ---\n`;
+            text += data.ai_explanation || 'No explanation generated.';
 
             // Typewriter effect (Antigravity: ag-typewriter-report)
             let i = 0;
@@ -947,7 +945,7 @@ Port Congestion: MODERATE (12h delay Suez)`
                 if (i > text.length) clearInterval(interval);
             }, 10);
         } catch (err) {
-            setReport('⚠️ API connection required. Connect Claude API to generate live reports.\n\n[DEMO MODE]\n\n═══════════════════════════════\nVOYAGE RISK ASSESSMENT REPORT\nNAVIGATOR Intelligence System\n═══════════════════════════════\n\n1. EXECUTIVE SUMMARY\n\nVessel MV Ocean Star presents a HIGH-risk profile (72/100) for its Dubai–Suez transit. Passage through the Gulf of Aden piracy corridor combined with active storm systems creates compounding risk factors requiring specialist underwriter review and mandatory war risk endorsement.\n\n2. VESSEL RISK PROFILE\n\nReliability Score: 82/100 (GOOD)\nFleet Age Factor: 8 years — within acceptable range\nMaintenance Record: 2 minor incidents (last 24 months)\nFlag State Compliance: Panama — standard monitoring\nInsurance Tier: HIGH — elevated premium loading required\n\n3. VOYAGE RISK BREAKDOWN\n\nWeather Risk:    42pts (Weight: 40%) — Storm forecast 45kn winds\nPiracy Risk:     22pts (Weight: 30%) — 3 incidents, 24h radius\nCongestion Risk: 8pts  (Weight: 20%) — 47 vessels queued, Suez\nBehaviour Risk:  0pts  (Weight: 10%) — No anomalies detected\n\nTOTAL VOYAGE RISK SCORE: 72/100 — HIGH\n\n4. KEY RISK DRIVERS\n\n• Passage through Bab-el-Mandeb strait (active threat zone)\n• Sea state 5-6 forecast between 14:00-22:00 UTC\n• Suez Canal congestion: estimated 12h additional delay\n• Yemen EEZ proximity — elevated threat level\n\n5. ANOMALY ALERTS\n\n⚠️  AIS signal stable — continuous monitoring in place\n⚠️  Speed profile nominal — no deviations detected\n✓   Route compliance: vessel on filed track\n\n6. RECOMMENDED ACTIONS\n\n→ Issue voyage policy with war risk endorsement\n→ Require armed security team through Gulf of Aden\n→ Notify P&I Club of high-risk passage\n→ 6-hourly position reporting requirement\n→ Alternative routing via Cape of Good Hope: Risk 38/100\n\n7. PREMIUM LOADING\n\nBase Premium:        $2,400\nRisk Loading (HIGH): +28% = $672\nWar Risk Rider:      $1,800\nTotal Recommended:   $4,872\n\nValidity: 72 hours from report generation\nIssued by: NAVIGATOR AI Intelligence System');
+            setReport(`⚠️ API connection failed. Ensure the Python FastAPI server is running on port 8000.\n\nError: ${err.message}`);
         }
         setLoading(false);
     };
