@@ -18,6 +18,7 @@ import { getAllVessels, getVesselById, getHighRiskVessels, getActiveVessels } fr
 import { calculateVoyageRisk, getVoyageRiskBreakdown } from "./logic/riskEngine";
 import { generateRiskExplanation, generateVoyageSummary } from "./services/aiExplanation";
 import AIBehaviorMonitor from "./components/AIBehaviorMonitor";
+import MaritimeRiskMap from "./components/MaritimeRiskMap";
 
 // ─────────────────────────────────────────────────────────────
 // ANTIGRAVITY DESIGN TOKENS
@@ -348,6 +349,10 @@ const GlobalMapView = () => {
                 <StatCard label="Storm Systems" value="5" color={AG.colors.biolume} icon="🌀" delay={0.3} />
             </div>
 
+            <div style={{ marginBottom: "24px" }}>
+                <MaritimeRiskMap />
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
                 {/* Map */}
                 <FloatCard delay={0.4} style={{ padding: 0, overflow: 'hidden', minHeight: 420, position: 'relative' }}>
@@ -633,7 +638,7 @@ const VoyageDashboardView = () => {
                 {/* Current Risk Breakdown */}
                 <FloatCard delay={0.4} style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
                     <div style={{ fontSize: 12, color: AG.colors.text.muted, letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace' }}>CURRENT RISK SCORE</div>
-                    <ScoreRing score={vessel.riskScore || vessel.risk} size={140} strokeWidth={10} />
+                    <ScoreRing score={vessel.risk} size={140} strokeWidth={10} />
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {(() => {
                             const breakdown = getVoyageRiskBreakdown();
@@ -1044,6 +1049,7 @@ export default function MaritimePlatform() {
     return (
         <div style={{
             display: 'flex', minHeight: '100vh',
+            width: '100%',
             background: AG.colors.void,
             fontFamily: '"DM Sans", "Segoe UI", sans-serif',
             color: AG.colors.text.primary,
