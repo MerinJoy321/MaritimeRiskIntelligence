@@ -1,0 +1,6 @@
+voyage_id,vessel_id,origin,destination,route_risk
+VY001,V001,Dubai,Suez,75
+VY002,V002,Rotterdam,New York,30
+VY003,V003,Singapore,Shanghai,45
+VY004,V004,Cape Town,London,60
+VY005,V005,Santos,Antwerp,55

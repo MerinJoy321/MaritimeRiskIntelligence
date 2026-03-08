@@ -12,6 +12,7 @@ import {
     RadarChart, Radar, PolarGrid, PolarAngleAxis,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
+import { getVesselRisk, getVoyageRisk, getVessels, addVessel } from "./lib/api";
 
 // ─────────────────────────────────────────────────────────────
 // ANTIGRAVITY DESIGN TOKENS
@@ -244,6 +245,7 @@ const NAV_ITEMS = [
     { id: 'route', label: 'Route Simulator', icon: '📡' },
     { id: 'behaviour', label: 'Behaviour Monitor', icon: '🔍' },
     { id: 'report', label: 'AI Risk Report', icon: '📋' },
+    { id: 'data', label: 'Data Management', icon: '⚙️' },
 ];
 
 const Sidebar = ({ active, setActive }) => (
@@ -314,7 +316,7 @@ const Sidebar = ({ active, setActive }) => (
 // ─────────────────────────────────────────────────────────────
 // VIEW 1: GLOBAL RISK MAP
 // ─────────────────────────────────────────────────────────────
-const GlobalMapView = () => {
+const GlobalMapView = ({ vessels = MOCK_VESSELS }) => {
     const [selected, setSelected] = useState(null);
 
     // Simplified SVG world map representation with vessel markers
@@ -372,13 +374,13 @@ const GlobalMapView = () => {
                     </svg>
 
                     {/* Vessel markers */}
-                    {MOCK_VESSELS.map((v, i) => {
+                    {(vessels || MOCK_VESSELS).map((v, i) => {
                         // Normalize lat/lng to SVG percentage
                         const svgX = ((v.lng + 180) / 360) * 100;
                         const svgY = ((90 - v.lat) / 180) * 100;
-                        const color = getRiskColor(v.risk);
+                        const color = getRiskColor(v.risk || 20);
                         return (
-                            <motion.div key={v.id}
+                            <motion.div key={v.vessel_id || v.id}
                                 initial={{ scale: 0 }} animate={{ scale: 1 }}
                                 transition={{ delay: 0.5 + i * 0.1, type: 'spring' }}
                                 onClick={() => setSelected(v)}
@@ -388,7 +390,7 @@ const GlobalMapView = () => {
                                 }}
                             >
                                 {/* Ripple */}
-                                {v.risk >= 70 && (
+                                {(v.risk || 0) >= 70 && (
                                     <motion.div
                                         animate={{ scale: [1, 2.5], opacity: [0.6, 0] }}
                                         transition={{ duration: 1.8, repeat: Infinity }}
@@ -397,10 +399,10 @@ const GlobalMapView = () => {
                                 )}
                                 <div style={{
                                     width: 10, height: 10, borderRadius: 99, background: color,
-                                    boxShadow: `0 0 ${v.risk > 70 ? 16 : 8}px ${color}`,
+                                    boxShadow: `0 0 ${(v.risk || 0) > 70 ? 16 : 8}px ${color}`,
                                     border: `1.5px solid ${color}88`
                                 }} />
-                                {selected?.id === v.id && (
+                                {selected?.vessel_id === v.vessel_id && (
                                     <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: -12 }}
                                         style={{
                                             position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
@@ -412,7 +414,7 @@ const GlobalMapView = () => {
                                     >
                                         <div style={{ fontWeight: 700, color, marginBottom: 2 }}>{v.name}</div>
                                         <div style={{ color: AG.colors.text.muted }}>{v.route}</div>
-                                        <div>Risk: <b style={{ color }}>{v.risk}</b> | {v.status}</div>
+                                        <div>Risk: <b style={{ color }}>{v.risk || 20}</b> | {v.status}</div>
                                     </motion.div>
                                 )}
                             </motion.div>
@@ -469,8 +471,8 @@ const GlobalMapView = () => {
 // ─────────────────────────────────────────────────────────────
 // VIEW 2: VESSEL RISK PROFILE
 // ─────────────────────────────────────────────────────────────
-const VesselProfileView = () => {
-    const [selected, setSelected] = useState(MOCK_VESSELS[0]);
+const VesselProfileView = ({ vessels = MOCK_VESSELS, selectedVessel, onSelectVessel }) => {
+    const selected = selectedVessel || vessels[0];
 
     return (
         <div>
@@ -478,18 +480,18 @@ const VesselProfileView = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20 }}>
                 {/* Vessel List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {MOCK_VESSELS.map((v, i) => (
-                        <FloatCard key={v.id} delay={i * 0.08} onClick={() => setSelected(v)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', paddingRight: 8 }}>
+                    {vessels.map((v, i) => (
+                        <FloatCard key={v.vessel_id || v.id} delay={i * 0.08} onClick={() => onSelectVessel?.(v)}
                             style={{
-                                padding: '16px', border: selected.id === v.id ? `1px solid ${AG.colors.biolume}60` : undefined,
-                                boxShadow: selected.id === v.id ? `0 0 20px ${AG.colors.biolume}15, 0 8px 32px rgba(0,0,0,0.4)` : undefined
+                                padding: '16px', border: (selected?.vessel_id === v.vessel_id || selected?.id === v.id) ? `1px solid ${AG.colors.biolume}60` : undefined,
+                                boxShadow: (selected?.vessel_id === v.vessel_id || selected?.id === v.id) ? `0 0 20px ${AG.colors.biolume}15, 0 8px 32px rgba(0,0,0,0.4)` : undefined
                             }}
                         >
                             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                                 <div>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: AG.colors.text.primary }}>{v.flag} {v.name}</div>
-                                    <div style={{ fontSize: 11, color: AG.colors.text.muted }}>{v.type}</div>
+                                    <div style={{ fontSize: 11, color: AG.colors.text.muted }}>{(v.vessel_id || v.id)} • {v.type}</div>
                                 </div>
                                 <RiskBadge tier={v.tier} score={v.risk} />
                             </div>
@@ -581,17 +583,28 @@ const VesselProfileView = () => {
 // ─────────────────────────────────────────────────────────────
 // VIEW 3: VOYAGE DASHBOARD
 // ─────────────────────────────────────────────────────────────
-const VoyageDashboardView = () => {
-    const vessel = MOCK_VESSELS[0]; // MV Ocean Star
+const VoyageDashboardView = ({ voyageData, vesselData }) => {
+    const vessel = vesselData || MOCK_VESSELS[0];
+    const data = voyageData || { voyage_risk_score: 72, factors: { weather_risk: 42, incident_rate: 22, maintenance_impact: 8, route_risk: 30 } };
+    const score = data.voyage_risk_score ?? 0;
+    const rawFactors = data.factors || {};
+
+    // Normalize: backend uses incident_rate/weather_risk/maintenance_impact/route_risk
+    const factors = {
+        weather:     rawFactors.weather_risk     ?? rawFactors.weather     ?? 0,
+        piracy:      rawFactors.incident_rate    ?? rawFactors.piracy      ?? 0,
+        maintenance: rawFactors.maintenance_impact ?? rawFactors.maintenance ?? 0,
+        route:       rawFactors.route_risk       ?? rawFactors.route       ?? 0,
+    };
 
     return (
         <div>
-            <SectionHeader title="Voyage Risk Dashboard" subtitle="MV Ocean Star — Dubai → Suez Canal" badge="HIGH" />
+            <SectionHeader title="Voyage Risk Dashboard" subtitle={`${vessel.name || 'Unknown Vessel'} — ${vessel.route || 'Route Unknown'}`} badge={getRiskLabel(score)} />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
-                <StatCard label="Voyage Risk Score" value={vessel.risk} color={getRiskColor(vessel.risk)} icon="⚡" delta={12} delay={0} />
-                <StatCard label="Weather Risk" value="MODERATE" color={AG.colors.amber} icon="🌩️" delay={0.1} />
-                <StatCard label="Piracy Risk" value="HIGH" color={AG.colors.coral} icon="🏴‍☠️" delay={0.2} />
+                <StatCard label="Voyage Risk Score" value={score} color={getRiskColor(score)} icon="⚡" delta={12} delay={0} />
+                <StatCard label="Weather Risk" value={factors.weather > 50 ? "HIGH" : "MODERATE"} color={factors.weather > 50 ? AG.colors.coral : AG.colors.amber} icon="🌩️" delay={0.1} />
+                <StatCard label="Incident Rate" value={factors.piracy > 50 ? "HIGH" : "MODERATE"} color={factors.piracy > 50 ? AG.colors.coral : AG.colors.amber} icon="🏴‍☠️" delay={0.2} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 20 }}>
@@ -620,13 +633,13 @@ const VoyageDashboardView = () => {
                 {/* Current Risk Breakdown */}
                 <FloatCard delay={0.4} style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
                     <div style={{ fontSize: 12, color: AG.colors.text.muted, letterSpacing: '0.1em', fontFamily: 'JetBrains Mono, monospace' }}>CURRENT RISK SCORE</div>
-                    <ScoreRing score={vessel.risk} size={140} strokeWidth={10} />
+                    <ScoreRing score={Math.round(score) || 0} size={140} strokeWidth={10} />
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {[
-                            { label: 'Weather', value: 42, color: AG.colors.biolume, weight: '40%' },
-                            { label: 'Piracy', value: 22, color: AG.colors.coral, weight: '30%' },
-                            { label: 'Congestion', value: 8, color: AG.colors.amber, weight: '20%' },
-                            { label: 'Behaviour', value: 0, color: AG.colors.phosphor, weight: '10%' },
+                            { label: 'Weather', value: Math.round(factors.weather), color: AG.colors.biolume, weight: '15%' },
+                            { label: 'Incidents', value: Math.round(factors.piracy), color: AG.colors.coral, weight: '40%' },
+                            { label: 'Maintenance', value: Math.round(factors.maintenance), color: AG.colors.amber, weight: '25%' },
+                            { label: 'Route Risk', value: Math.round(factors.route), color: AG.colors.phosphor, weight: '20%' },
                         ].map(item => (
                             <div key={item.label}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
@@ -634,7 +647,7 @@ const VoyageDashboardView = () => {
                                     <span style={{ fontSize: 11, fontWeight: 700, color: item.color, fontFamily: 'JetBrains Mono, monospace' }}>{item.value}</span>
                                 </div>
                                 <div style={{ height: 3, background: AG.colors.ghost, borderRadius: 99, overflow: 'hidden' }}>
-                                    <motion.div initial={{ width: 0 }} animate={{ width: `${item.value}%` }}
+                                    <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(item.value, 100)}%` }}
                                         transition={{ duration: 1, delay: 0.6, ease: AG.easing.swell }}
                                         style={{ height: '100%', background: item.color, boxShadow: `0 0 8px ${item.color}`, borderRadius: 99 }}
                                     />
@@ -772,7 +785,8 @@ const RouteSimulatorView = () => {
 // ─────────────────────────────────────────────────────────────
 // VIEW 5: BEHAVIOUR MONITOR
 // ─────────────────────────────────────────────────────────────
-const BehaviourMonitorView = () => {
+const BehaviourMonitorView = ({ vesselData }) => {
+    const vessel = vesselData || MOCK_VESSELS[0];
     const anomalyData = [
         { time: '06:00', expected: 12, actual: 12, deviation: 0 },
         { time: '08:00', expected: 12, actual: 13, deviation: 1 },
@@ -792,7 +806,7 @@ const BehaviourMonitorView = () => {
 
     return (
         <div>
-            <SectionHeader title="Vessel Behaviour Monitor" subtitle="AI-powered anomaly detection — MV Ocean Star" />
+            <SectionHeader title="Vessel Behaviour Monitor" subtitle={`AI-powered anomaly detection — ${vessel.name || 'MV Ocean Star'}`} />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
                 <FloatCard delay={0} style={{ padding: '20px' }}>
@@ -868,10 +882,10 @@ const BehaviourMonitorView = () => {
 // ─────────────────────────────────────────────────────────────
 // VIEW 6: AI RISK REPORT (Claude API)
 // ─────────────────────────────────────────────────────────────
-const AIReportView = () => {
+const AIReportView = ({ vessels = MOCK_VESSELS }) => {
     const [report, setReport] = useState('');
     const [loading, setLoading] = useState(false);
-    const [vessel, setVessel] = useState(MOCK_VESSELS[0]);
+    const [vessel, setVessel] = useState(vessels[0]);
 
     const SYSTEM_PROMPT = `You are NAVIGATOR, an expert AI risk intelligence system for marine insurance. 
 Generate a professional voyage risk assessment report. 
@@ -940,15 +954,15 @@ Port Congestion: MODERATE (12h delay Suez)`
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <FloatCard delay={0} style={{ padding: '20px' }}>
                         <div style={{ fontSize: 11, color: AG.colors.text.muted, letterSpacing: '0.1em', marginBottom: 12, fontFamily: 'JetBrains Mono, monospace' }}>SELECT VESSEL</div>
-                        {MOCK_VESSELS.map((v, i) => (
-                            <motion.button key={v.id} onClick={() => setVessel(v)}
+                        {vessels.map((v, i) => (
+                            <motion.button key={v.vessel_id || v.id} onClick={() => setVessel(v)}
                                 style={{
-                                    width: '100%', padding: '10px 14px', background: vessel.id === v.id ? `${AG.colors.biolume}15` : 'transparent',
-                                    border: `1px solid ${vessel.id === v.id ? AG.colors.biolume + '40' : 'transparent'}`,
+                                    width: '100%', padding: '10px 14px', background: (vessel.vessel_id || vessel.id) === (v.vessel_id || v.id) ? `${AG.colors.biolume}15` : 'transparent',
+                                    border: `1px solid ${(vessel.vessel_id || vessel.id) === (v.vessel_id || v.id) ? AG.colors.biolume + '40' : 'transparent'}`,
                                     borderRadius: 8, cursor: 'pointer', textAlign: 'left', marginBottom: 4, display: 'flex', justifyContent: 'space-between'
                                 }}
                             >
-                                <span style={{ fontSize: 12, color: vessel.id === v.id ? AG.colors.biolume : AG.colors.text.secondary }}>{v.name}</span>
+                                <span style={{ fontSize: 12, color: (vessel.vessel_id || vessel.id) === (v.vessel_id || v.id) ? AG.colors.biolume : AG.colors.text.secondary }}>{v.name}</span>
                                 <RiskBadge tier={v.tier} score={v.risk} />
                             </motion.button>
                         ))}
@@ -1009,20 +1023,206 @@ Port Congestion: MODERATE (12h delay Suez)`
         </div>
     );
 };
+// VIEW 7: DATA MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+const DataManagementView = ({ onVesselAdded }) => {
+    const [formData, setFormData] = useState({
+        vessel_id: '',
+        name: '',
+        flag: 'PA',
+        type: 'Tanker',
+        maintenance_score: 80,
+    });
+    const [status, setStatus] = useState(null);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setStatus('saving');
+        const res = await addVessel(formData);
+        if (res && !res.error) {
+            setStatus('success');
+            onVesselAdded?.();
+            setTimeout(() => {
+                setStatus(null);
+                setFormData({ vessel_id: '', name: '', flag: 'PA', type: 'Tanker', maintenance_score: 80 });
+            }, 3000);
+        } else {
+            setStatus('error');
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: 600 }}>
+            <SectionHeader title="Maritime Data Management" subtitle="Register new vessels and initialize risk telemetry" />
+            
+            <FloatCard style={{ padding: 32 }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: 11, color: AG.colors.text.muted, marginBottom: 8, fontFamily: 'JetBrains Mono, monospace' }}>VESSEL ID</label>
+                            <input 
+                                required
+                                value={formData.vessel_id}
+                                onChange={e => setFormData({...formData, vessel_id: e.target.value.toUpperCase()})}
+                                style={{ width: '100%', background: AG.colors.void, border: `1px solid ${AG.colors.current}`, borderRadius: 8, padding: '10px 14px', color: AG.colors.text.primary, outline: 'none', fontFamily: 'JetBrains Mono, monospace' }}
+                                placeholder="V006"
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: 11, color: AG.colors.text.muted, marginBottom: 8, fontFamily: 'JetBrains Mono, monospace' }}>VESSEL NAME</label>
+                            <input 
+                                required
+                                value={formData.name}
+                                onChange={e => setFormData({...formData, name: e.target.value})}
+                                style={{ width: '100%', background: AG.colors.void, border: `1px solid ${AG.colors.current}`, borderRadius: 8, padding: '10px 14px', color: AG.colors.text.primary, outline: 'none' }}
+                                placeholder="MV Deep Explorer"
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: 11, color: AG.colors.text.muted, marginBottom: 8, fontFamily: 'JetBrains Mono, monospace' }}>FLAG (EMOJI)</label>
+                            <input 
+                                value={formData.flag}
+                                onChange={e => setFormData({...formData, flag: e.target.value})}
+                                style={{ width: '100%', background: AG.colors.void, border: `1px solid ${AG.colors.current}`, borderRadius: 8, padding: '10px 14px', color: AG.colors.text.primary, outline: 'none' }}
+                                placeholder="🇵🇦"
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: 11, color: AG.colors.text.muted, marginBottom: 8, fontFamily: 'JetBrains Mono, monospace' }}>VESSEL TYPE</label>
+                            <select 
+                                value={formData.type}
+                                onChange={e => setFormData({...formData, type: e.target.value})}
+                                style={{ width: '100%', background: AG.colors.void, border: `1px solid ${AG.colors.current}`, borderRadius: 8, padding: '10px 14px', color: AG.colors.text.primary, outline: 'none' }}
+                            >
+                                <option>Tanker</option>
+                                <option>Bulk Carrier</option>
+                                <option>Container Ship</option>
+                                <option>General Cargo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: 11, color: AG.colors.text.muted, marginBottom: 8, fontFamily: 'JetBrains Mono, monospace' }}>INITIAL MAINTENANCE SCORE (0-100)</label>
+                        <input 
+                            type="range"
+                            min="0" max="100"
+                            value={formData.maintenance_score}
+                            onChange={e => setFormData({...formData, maintenance_score: parseInt(e.target.value)})}
+                            style={{ width: '100%', cursor: 'pointer' }}
+                        />
+                        <div style={{ textAlign: 'right', fontSize: 14, fontWeight: 700, color: AG.colors.biolume, fontFamily: 'JetBrains Mono, monospace', marginTop: 4 }}>{formData.maintenance_score}%</div>
+                    </div>
+
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        disabled={status === 'saving'}
+                        style={{
+                            width: '100%', padding: '14px', borderRadius: 8, border: 'none',
+                            background: status === 'success' ? AG.colors.phosphor : AG.colors.biolume,
+                            color: AG.colors.void, fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                            marginTop: 10, transition: 'all 0.3s ease',
+                            boxShadow: `0 0 20px ${status === 'success' ? AG.colors.phosphor : AG.colors.biolume}30`
+                        }}
+                    >
+                        {status === 'saving' ? 'UPLOADING...' : status === 'success' ? 'VESSEL REGISTERED ✓' : 'REGISTER VESSEL'}
+                    </motion.button>
+
+                    {status === 'error' && (
+                        <div style={{ color: AG.colors.coral, fontSize: 12, textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>ERROR: FAILED TO PERSIST DATA</div>
+                    )}
+                </form>
+            </FloatCard>
+        </div>
+    );
+};
 
 // ─────────────────────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────────────────────
 export default function MaritimePlatform() {
     const [activeView, setActiveView] = useState('map');
+    const [vessels, setVessels] = useState(MOCK_VESSELS);
+    const [vesselIdInput, setVesselIdInput] = useState('V001');
+    const [vesselRiskData, setVesselRiskData] = useState(null);
+    const [voyageRiskData, setVoyageRiskData] = useState(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+    const refreshVessels = async () => {
+        const data = await getVessels();
+        if (data && data.length > 0) {
+            setVessels(data.map(v => ({
+                ...v,
+                ais: typeof v.ais === 'string' ? v.ais === 'true' : v.ais
+            })));
+        }
+    };
+
+    const performAnalysis = async (vid) => {
+        setIsAnalyzing(true);
+        const vidToSearch = (vid || vesselIdInput || 'V001').trim().toUpperCase();
+        try {
+            const [vData, voyData] = await Promise.all([
+                getVesselRisk(vidToSearch),
+                getVoyageRisk(vidToSearch, 'Dubai', 'Suez'),
+            ]);
+
+            // Match vessel from loaded list, fall back to first vessel
+            const currentVessels = vessels.length > 0 ? vessels : MOCK_VESSELS;
+            const meta = currentVessels.find(
+                v => (v.vessel_id || v.id || '').toUpperCase() === vidToSearch
+            ) || currentVessels[0];
+
+            // Normalize tier: backend returns 'low'/'medium'/'high', UI expects 'LOW'/'MODERATE'/'HIGH'/'CRITICAL'
+            const backendLevel = voyData?.risk_level?.toLowerCase() || '';
+            const tierMap = { low: 'LOW', medium: 'MODERATE', high: 'HIGH', critical: 'CRITICAL' };
+            const tier = tierMap[backendLevel] || meta.tier || 'LOW';
+
+            // Build complete merged vessel profile
+            const mergedVessel = {
+                ...meta,
+                vessel_id: vidToSearch,
+                id: vidToSearch,
+                name: meta.name || vidToSearch,
+                flag: meta.flag || '🚢',
+                type: meta.type || 'Unknown',
+                route: meta.route || 'Route Unknown',
+                status: meta.status || 'Unknown',
+                ais: meta.ais === true || meta.ais === 'true',
+                risk: voyData?.voyage_risk_score != null ? Math.round(voyData.voyage_risk_score) : (meta.risk || 0),
+                reliability: vData?.maintenance_score != null ? vData.maintenance_score : (meta.reliability || 50),
+                tier,
+                incident_count: vData?.total_incidents ?? 0,
+            };
+
+            setVesselRiskData(mergedVessel);
+            setVoyageRiskData(voyData || null);
+            setVesselIdInput(vidToSearch);
+        } catch (err) {
+            console.error('Analysis failed', err);
+        }
+        setIsAnalyzing(false);
+    };
+
+    useEffect(() => {
+        refreshVessels().then(() => performAnalysis('V001'));
+    }, []);
+
+    // Views that show the vessel ID search bar
+    const VESSEL_SEARCH_VIEWS = ['vessel', 'behaviour', 'data'];
 
     const views = {
-        map: <GlobalMapView />,
-        vessel: <VesselProfileView />,
-        voyage: <VoyageDashboardView />,
+        map: <GlobalMapView vessels={vessels} />,
+        vessel: <VesselProfileView vessels={vessels} selectedVessel={vesselRiskData} onSelectVessel={(v) => performAnalysis(v.vessel_id || v.id)} />,
+        voyage: <VoyageDashboardView voyageData={voyageRiskData} vesselData={vesselRiskData} />,
         route: <RouteSimulatorView />,
-        behaviour: <BehaviourMonitorView />,
-        report: <AIReportView />,
+        behaviour: <BehaviourMonitorView vesselData={vesselRiskData} />,
+        report: <AIReportView vessels={vessels} />,
+        data: <DataManagementView onVesselAdded={() => { refreshVessels(); performAnalysis(vesselIdInput || 'V001'); }} />,
     };
 
     return (
@@ -1048,11 +1248,53 @@ export default function MaritimePlatform() {
             <div style={{ flex: 1, overflow: 'auto', padding: '32px 36px' }}>
                 {/* Top bar */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-                    <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                         <motion.div key={activeView} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
                             style={{ fontSize: 13, color: AG.colors.text.muted, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em' }}>
                             MARITIME RISK INTELLIGENCE PLATFORM
                         </motion.div>
+
+                        {/* Search Bar — only on relevant views */}
+                        {VESSEL_SEARCH_VIEWS.includes(activeView) && (
+                            <motion.div
+                                key="search-bar"
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.25 }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 8,
+                                    background: AG.colors.abyss, border: `1px solid ${AG.colors.biolume}40`,
+                                    borderRadius: 8, padding: '4px 8px', marginLeft: 20
+                                }}
+                            >
+                                <span style={{ fontSize: 12, color: AG.colors.text.muted }}>⚓</span>
+                                <input
+                                    type="text"
+                                    value={vesselIdInput}
+                                    onChange={(e) => setVesselIdInput(e.target.value.toUpperCase())}
+                                    onKeyDown={(e) => e.key === 'Enter' && performAnalysis()}
+                                    placeholder="VESSEL ID"
+                                    style={{
+                                        background: 'transparent', border: 'none', outline: 'none',
+                                        color: AG.colors.biolume, fontSize: 12, fontWeight: 700,
+                                        width: 90, fontFamily: 'JetBrains Mono, monospace'
+                                    }}
+                                />
+                                <button
+                                    onClick={() => performAnalysis()}
+                                    disabled={isAnalyzing}
+                                    style={{
+                                        background: isAnalyzing ? AG.colors.ghost : AG.colors.biolume,
+                                        color: isAnalyzing ? AG.colors.text.muted : AG.colors.void,
+                                        border: 'none', borderRadius: 4, padding: '4px 10px',
+                                        fontSize: 10, fontWeight: 900, cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {isAnalyzing ? '...' : 'ANALYZE'}
+                                </button>
+                            </motion.div>
+                        )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                         <div style={{ fontSize: 12, color: AG.colors.text.muted, fontFamily: 'JetBrains Mono, monospace' }}>

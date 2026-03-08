@@ -1,0 +1,8 @@
+vessel_id,incident_type,severity
+V001,collision,3
+V001,engine_failure,2
+V002,grounding,4
+V003,fire,5
+V004,equipment_failure,1
+V005,collision,2
+V001,leak,1

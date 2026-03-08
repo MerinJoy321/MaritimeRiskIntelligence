@@ -1,9 +1,10 @@
-import MaritimePlatform from './MaritimePlatform.jsx'
+// @ts-ignore
+import MaritimePlatform from "./MaritimePlatform";
 
 function App() {
   return (
     <MaritimePlatform />
-  )
+  );
 }
 
-export default App
+export default App;

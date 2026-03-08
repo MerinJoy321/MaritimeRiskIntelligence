@@ -1,0 +1,10 @@
+vessel_id,name,flag,type,route,lat,lng,status,reliability,tier,ais
+V001,MV Ocean Star,PA,Bulk Carrier,Dubai → Suez,25.2,56.3,En Route,82,HIGH,true
+V002,MT Nordic Pearl,NO,Oil Tanker,Rotterdam → New York,51.9,4.5,En Route,91,MODERATE,true
+V003,MV Fortune Bay,LR,Container Ship,Shanghai → LA,31.2,121.5,Port,67,LOW,true
+V004,MV Aden Horizon,MH,General Cargo,Djibouti → Mumbai,11.8,43.1,Delayed,55,CRITICAL,false
+V005,MV Cape Pioneer,PA,Bulk Carrier,Cape Town → Hamburg,-33.9,18.4,En Route,78,MODERATE,true
+V007,MV Test Ship,PA,Tanker,Unknown,0.0,0.0,Port,80,LOW,true
+V112,MVBerry,PA,Container Ship,Unknown,0.0,0.0,Port,80,LOW,true
+V890,MV Berry Two,PA,Bulk Carrier,Unknown,0.0,0.0,Port,80,LOW,true
+V888,MV Berry Explorer,PA,Bulk Carrier,Unknown,0.0,0.0,Port,80,LOW,true
