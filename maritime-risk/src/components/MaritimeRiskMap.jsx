@@ -7,6 +7,7 @@ import {
   Line,
 } from "react-simple-maps";
 import { riskZones, selectedRoute } from "../data/maritimeMapData";
+import { API_BASE_URL } from "../config";
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
@@ -33,7 +34,7 @@ const MaritimeRiskMap = () => {
   const [vessels, setVessels] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/vessels")
+    fetch(`${API_BASE_URL}/vessels`)
       .then(res => res.json())
       .then(data => {
           setVessels(data);

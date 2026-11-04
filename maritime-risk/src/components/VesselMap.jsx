@@ -1,6 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
 import { useEffect, useState } from "react"
 import * as L from 'leaflet';
+import { API_BASE_URL } from "../config";
 
 // Use standard URLs for icons to avoid Vite resolution issues
 const iconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
@@ -27,7 +28,7 @@ export default function VesselMap() {
   const [vessels, setVessels] = useState([])
 
   useEffect(() => {
-    fetch("http://localhost:8000/vessels")
+    fetch(`${API_BASE_URL}/vessels`)
       .then(res => res.json())
       .then(data => {
           console.log("Fetched vessels:", data);

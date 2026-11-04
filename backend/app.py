@@ -9,13 +9,17 @@ from risk_model import calculate_risk
 from ai_engine import get_risk_explanation
 
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 app = FastAPI(title="Maritime Risk Intelligence API")
 
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        *[origin.strip() for origin in os.environ.get("FRONTEND_URLS", "").split(",") if origin.strip()],
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
