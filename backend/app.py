@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 import random
@@ -6,7 +6,7 @@ import random
 # Import our custom modules
 from data_loader import load_vessel_data
 from risk_model import calculate_risk
-from ai_engine import get_risk_explanation
+from ai_engine import get_risk_explanation, generate_risk_report
 
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -85,6 +85,16 @@ class AIRiskRequest(BaseModel):
     piracy: float
     congestion: float
     behaviour: float
+
+class RiskReportRequest(BaseModel):
+    vessel: dict
+
+@app.post("/api/report")
+def generate_report(request: RiskReportRequest):
+    try:
+        return {"report": generate_risk_report(request.vessel)}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
 @app.post("/api/risk")
 def calculate_ai_risk(request: AIRiskRequest):

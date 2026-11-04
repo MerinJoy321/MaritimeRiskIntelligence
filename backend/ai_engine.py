@@ -66,3 +66,29 @@ Total Voyage Risk: {score:.2f}
             except Exception as e2:
                 return f"Could not generate AI explanation. API Error: {str(e2)}"
         return f"Could not generate AI explanation. API Error: {str(e)}"
+
+def generate_risk_report(vessel_data: Dict[str, Any]) -> str:
+    if client is None:
+        raise RuntimeError("GEMINI_API_KEY is not configured")
+
+    prompt = f"""Generate a professional voyage risk assessment report for this maritime insurance client.
+Return concise sections for:
+1. EXECUTIVE SUMMARY
+2. VESSEL RISK PROFILE
+3. VOYAGE RISK BREAKDOWN
+4. KEY RISK DRIVERS
+5. ANOMALY ALERTS
+6. RECOMMENDED ACTIONS
+7. PREMIUM LOADING RECOMMENDATION
+
+Vessel data:
+{vessel_data}
+
+Use specific maritime risk terminology and keep the report around 400 words."""
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+    )
+    return response.text
