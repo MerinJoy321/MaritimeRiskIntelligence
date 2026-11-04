@@ -5,6 +5,7 @@ from typing import Dict, Any
 
 # Configure Gemini with the user provided key
 API_KEY = os.environ.get("GEMINI_API_KEY")
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 client = genai.Client(api_key=API_KEY) if API_KEY else None
 
 SYSTEM_PROMPT = """You are an expert **maritime risk intelligence analyst** working for a marine insurance company.
@@ -44,7 +45,7 @@ Total Voyage Risk: {score:.2f}
 """
 
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model=MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
@@ -52,19 +53,6 @@ Total Voyage Risk: {score:.2f}
         )
         return response.text
     except Exception as e:
-        if "404" in str(e):
-            # Fallback to older model if active model is not found
-            try:
-                response = client.models.generate_content(
-                    model='gemini-1.5-flash',
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                    )
-                )
-                return response.text
-            except Exception as e2:
-                return f"Could not generate AI explanation. API Error: {str(e2)}"
         return f"Could not generate AI explanation. API Error: {str(e)}"
 
 def generate_risk_report(vessel_data: Dict[str, Any]) -> str:
@@ -87,7 +75,7 @@ Vessel data:
 Use specific maritime risk terminology and keep the report around 400 words."""
 
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model=MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
     )
