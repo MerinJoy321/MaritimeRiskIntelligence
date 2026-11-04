@@ -4,8 +4,8 @@ from google.genai import types
 from typing import Dict, Any
 
 # Configure Gemini with the user provided key
-API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyBn6HxMhLxbjHr-bHw67lJeOUPMukWE54g")
-client = genai.Client(api_key=API_KEY)
+API_KEY = os.environ.get("GEMINI_API_KEY")
+client = genai.Client(api_key=API_KEY) if API_KEY else None
 
 SYSTEM_PROMPT = """You are an expert **maritime risk intelligence analyst** working for a marine insurance company.
 Your role is to interpret voyage risk signals and generate clear explanations for insurance underwriters.
@@ -30,6 +30,9 @@ Guidelines:
 6. If risk is low, briefly explain why the voyage is considered safe."""
 
 def get_risk_explanation(vessel_name: str, score: float, metrics: Dict[str, float]) -> str:
+    if client is None:
+        return "Could not generate AI explanation. GEMINI_API_KEY is not configured."
+
     try:
         prompt = f"""
 Vessel: {vessel_name}

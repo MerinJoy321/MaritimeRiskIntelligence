@@ -4,3 +4,4 @@ uvicorn
 requests
 geopy
 streamlit
+google-genai
