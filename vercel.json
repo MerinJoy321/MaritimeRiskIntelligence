@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm run build --prefix maritime-risk",
+  "outputDirectory": "maritime-risk/dist",
+  "installCommand": "npm install && npm install --prefix maritime-risk --legacy-peer-deps",
+  "framework": "vite"
+}
