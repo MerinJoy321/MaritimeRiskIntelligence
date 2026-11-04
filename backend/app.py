@@ -20,6 +20,7 @@ app.add_middleware(
         "http://localhost:5173",
         *[origin.strip() for origin in os.environ.get("FRONTEND_URLS", "").split(",") if origin.strip()],
     ],
+    allow_origin_regex=r"https://([a-z0-9-]+\.)*vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
